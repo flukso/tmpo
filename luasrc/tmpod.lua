@@ -106,7 +106,7 @@ local TMPO_TOPIC_SYNC_PUB = string.format("/device/%s/tmpo/sync", DEVICE)
 local TMPO_TOPIC_SENSOR_SUB = "/sensor/+/+"
 local TMPO_TOPIC_SENSOR_PUB = "/sensor/%s/tmpo/%d/%d/%d/gz"
 -- /sensor/[sid]/tmpo/[rid]/[lvl]/[bid]/gz
-local TMPO_GC20_THRESHOLD = 0.75 -- fraction of used blocks
+local TMPO_GC20_THRESHOLD = 0.95 -- fraction of used blocks
 local TMPO_GZCHECK_EXEC_FMT = "gzip -trS '' %s 2>&1"
 local TMPO_GZCHECK_FILE_REGEX = "^gzip:%s*([%w%.%-_/]+):.*$"
 
@@ -685,9 +685,11 @@ mqtt.ON_MESSAGE = function(mid, topic, jpayload, qos, retain)
 		local sparams = config.sensor[sid]
 		if not (sparams and dtype == sparams.data_type) then return end
 		local payload = luci.json.decode(jpayload)
+		if not payload then return end
 		local time, value, unit = payload[1], payload[2], payload[3]
 		-- TODO do we want decimation for all sensors?
 		-- if time % TMPO_DECIMATION_FACTOR ~= 0 then return end
+		if type(value) ~= "number" then return end
 		tmpo:push8(sid, time, value, unit)
 	end
 
